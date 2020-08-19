@@ -1,6 +1,7 @@
 var app = require('express')()
 var http = require('http').createServer(app)
 var io = require('socket.io')(http)
+var allSocket = {}
 var person = [
     {
         avatar: 'qunliao',
@@ -13,17 +14,23 @@ app.get('/', (req, res) => {
     console.log('访问网站')
 })
 io.on('connection', (socket) => {
-    console.log(' user connected')
+    console.log('user connected')
     socket.on('disconnect', () => {
         console.log('user disconnected')
     })
     socket.on('chatMessage', (msg) => {
         console.log('message: ' + msg.msg)
-        io.emit('msg', msg)
+        if(msg.receiver === '聊天室'){
+            io.emit('msg', msg)
+        }else{
+            allSocket[msg.receiver].emit('msg', msg)
+        }
     })
     socket.on('come', (cnt) => {
         console.log('online: ' + cnt)
         person.push(cnt)
+        allSocket[cnt.name] = socket
+        console.log(allSocket)
         io.emit('online', person)
     })
 })

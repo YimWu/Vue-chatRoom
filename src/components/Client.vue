@@ -23,17 +23,14 @@
                                 <Row class="row">
                                     <!-- iView标签闭合问题，已对eslint设置忽略 -->
                                     <Col class="avatar" span="7">
-                                        <Avatar style="width: 40px;height: 40px" shape="square" :src="avatar(item.avatar)"/>
-                    
+                                        <Avatar style="width: 40px;height: 40px" shape="square" :src="avatar(item.name===self ? 'file' : item.avatar)"/>
                                     </Col>
                                     <Col class="infomation" span="12">
-                                        <div class="name">{{item.name}}</div>
-                                        <div>111</div>
-                    
+                                        <div class="name">{{item.name===self ? '文件传输助手' : item.name}}</div>
+                                        <div class="msg">{{msgs[item.name] ? msgs[item.name][msgs[item.name].length-1].msg : ''}}</div>
                                     </Col>
                                     <Col class="time" span="">
-                                        <span>17:53</span>
-                    
+                                        <span>{{msgs[item.name] ? msgs[item.name][msgs[item.name].length-1].time : ''}}</span>
                                     </Col>
                                 </Row>
                             </MenuItem>
@@ -63,7 +60,7 @@
                 <Footer class="footer">
                     <Icon class="emotion" type="ios-happy-outline" />
                     <textarea @keydown.enter.prevent="send" v-model="sendMsg" class="textarea" cols="52" rows="3"></textarea>
-                    <div class="tip" v-if="visible">
+                    <div class="tip" v-show="visible">
                         <div class="tip-inner">不能发送空白信息</div>
                         <div class="tip-inner2"></div>
                     </div>
@@ -76,6 +73,11 @@
 
 <script>
 import io from 'socket.io-client'
+
+function getDate(){
+    var obj = new Date()
+    return (obj.getHours()+'').padStart(2, '0')+':'+ (obj.getMinutes()+'').padStart(2, '0')
+}
 export default {
     name: 'Client',
     props: {
@@ -87,7 +89,7 @@ export default {
             menu: ['1', '2', '3'],
             currentName: '聊天室',
             self: '吴曼燚',
-            myAvatar: 'Curry',
+            myAvatar: 'avatar1',
             person: [
                 {
                     avatar: 'qunliao',
@@ -97,7 +99,7 @@ export default {
             msgs: {},
             sendMsg: '',
             socket: '',
-            visible: false
+            visible: false,
         }
     },
     computed: {
@@ -107,7 +109,12 @@ export default {
     },
     methods: {
         selectName(name){
-            this.name = name
+            this.currentName = name
+            //取Content组件中的元素div,用于更新聊天内容时控制滚动条至底部
+            let div = this.$refs.content.$el
+            this.$nextTick(() => {
+                div.scrollTop = div.scrollHeight
+            })
         },
         avatar(avt){
             if(avt === 'self'){
@@ -117,6 +124,8 @@ export default {
             }
         },
         send(){
+            var currentTime = getDate()
+            console.log(currentTime)
             if(!this.sendMsg){
                 this.visible = true
                 setTimeout(() => {
@@ -128,10 +137,33 @@ export default {
                 sender: this.self,
                 receiver: this.currentName,
                 msg: this.sendMsg,
-                avatar: this.myAvatar
+                avatar: this.myAvatar,
+                group: false,
+                time: currentTime
             }
-            this.socket.emit('chatMessage', msg)
-            this.sendMsg = ''
+            if(this.currentName !== '聊天室'){
+                console.log('不是聊天室')
+                //取Content组件中的元素div,用于更新聊天内容时控制滚动条至底部
+                let div = this.$refs.content.$el
+                if(!this.msgs[this.currentName]){
+                    // this.msgs[msg.receiver]=[]
+                    this.$set(this.msgs, this.currentName, [])
+                }
+                this.msgs[this.currentName].push(msg)
+                this.$nextTick(() => {
+                    div.scrollTop = div.scrollHeight
+                })
+                if(this.currentName !== this.self){
+                    this.socket.emit('chatMessage', msg)
+                }
+                this.sendMsg = ''
+            }else{
+                msg.group = true
+                console.log('shiliaotianshi')
+                this.socket.emit('chatMessage', msg)
+                this.sendMsg = ''
+            }
+            
         },
         exit(){
             this.$router.push({path: '/login'})
@@ -163,13 +195,20 @@ export default {
             //     sender: this.self,
             //     msg: msg
             // })
+            //定义
+            var msgName = '' 
             console.log(msg)
-            if(!this.msgs[msg.receiver]){
-                // this.msgs[msg.receiver]=[]
-                this.$set(this.msgs, msg.receiver, [])
+            if(msg.group){
+                msgName = msg.receiver
+            }else{
+                msgName = msg.sender
             }
-            this.msgs[msg.receiver].push(msg)
-            console.log(this.msgs[msg.receiver])
+            if(!this.msgs[msgName]){
+                // this.msgs[msg.receiver]=[]
+                this.$set(this.msgs, msgName, [])
+            }
+            this.msgs[msgName].push(msg)
+            console.log(this.msgs[msgName])
             // this.msg = this.msgs[this.currentName]
             //消息更新时将滚动条置于最底部
             this.$nextTick(() => {
@@ -257,7 +296,12 @@ export default {
                                         font-size 10px
                                         .name
                                             width 100%
-                                            font-size 14px
+                                            font-size 12px
+                                            overflow hidden
+                                            white-space nowrap
+                                            text-overflow ellipsis
+                                        .msg 
+                                            width 100%
                                             overflow hidden
                                             white-space nowrap
                                             text-overflow ellipsis
