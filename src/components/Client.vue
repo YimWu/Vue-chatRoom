@@ -88,14 +88,14 @@ export default {
             // menu: ['1', '2', '3', '4', '5', '6', '7', '8'],
             menu: ['1', '2', '3'],
             currentName: '聊天室',
-            self: '吴曼燚',
+            self: '',
             myAvatar: 'avatar1',
-            person: [
-                {
+            person: {
+                '聊天室': {
                     avatar: 'qunliao',
                     name: '聊天室'
                 },
-            ],
+            },
             msgs: {},
             sendMsg: '',
             socket: '',
@@ -103,9 +103,9 @@ export default {
         }
     },
     computed: {
-        // msg(){
-        //     return this.msgs[this.currentName]
-        // }
+        mySocket(){
+            return this.$store.socket
+        }
     },
     methods: {
         selectName(name){
@@ -154,13 +154,13 @@ export default {
                     div.scrollTop = div.scrollHeight
                 })
                 if(this.currentName !== this.self){
-                    this.socket.emit('chatMessage', msg)
+                    this.mySocket.emit('chatMessage', msg)
                 }
                 this.sendMsg = ''
             }else{
                 msg.group = true
                 console.log('shiliaotianshi')
-                this.socket.emit('chatMessage', msg)
+                this.mySocket.emit('chatMessage', msg)
                 this.sendMsg = ''
             }
             
@@ -170,7 +170,14 @@ export default {
             this.$router.go(0)
         }
     },
-
+    beforeCreate(){
+        if(!this.$route.params.name){
+            this.$router.push({
+                path: '/login',
+                name: 'Login',
+            })
+        }
+    },
     mounted() {
         this.self = this.$route.params.name
         this.myAvatar = this.$route.params.avatar
@@ -180,22 +187,8 @@ export default {
         this.$nextTick(() => {
             div.scrollTop = div.scrollHeight
         })
-        //连接服务器
-        this.socket = io('http://localhost:9999')
-        console.log(this.self)
-        //向服务器发送上线消息
-        this.socket.emit('come', {
-            name: this.self,
-            avatar: this.myAvatar
-        })
-
         //接收消息
-        this.socket.on('msg', (msg) => {
-            // this.msgs.({
-            //     sender: this.self,
-            //     msg: msg
-            // })
-            //定义
+        this.mySocket.on('msg', (msg) => {
             var msgName = '' 
             console.log(msg)
             if(msg.group){
@@ -219,10 +212,12 @@ export default {
         })
 
         //接收上线人员
-        this.socket.on('online', (ol) => {
-            console.log('ol',ol)
-            this.person = ol
+        this.mySocket.on('userlist', (list) => {
+            console.log('list',list)
+            this.person = list
         })
+
+        this.mySocket.emit('getUserlist')
     }
 }
 </script>

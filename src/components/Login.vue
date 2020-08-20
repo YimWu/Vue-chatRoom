@@ -6,6 +6,9 @@
                 <Icon @click="left" class="left" type="md-arrow-round-back" />
                 <Avatar class="avatar" shape="square" size="large" :src="myAvatar"/>
                 <Icon @click="right" class="right" type="md-arrow-round-forward" />
+                <Modal title="Error" v-model="errDisplay" :styles="{top: '80px',width: '200px'}">
+                    <p>用户名已存在，请重新输入！</p>
+                </Modal>
                 <Input @on-enter="login" v-model="name" class="input" size="large" placeholder="Input Your Name" />
                 <div class="tip" v-show="visible">
                     <div class="tip-inner">不能发送空白信息</div>
@@ -18,6 +21,9 @@
 </template>
 
 <script>
+import io from 'socket.io-client'
+//login请求返回错误状态
+const ERROR = 0
 
 export default {
     name: 'Login',
@@ -28,13 +34,17 @@ export default {
                      'avatar6', 'avatar7', 'avatar8', 'avatar9', 'avatar10', 
                      'avatar11', 'avatar12', 'avatar13', 'avatar14', 'avatar15'],
             avatarNum: 0,
-            visible: false
+            visible: false,
+            errDisplay: false
         }
     },
     computed: {
         myAvatar(){
             return require(`@/assets/images/${this.avatar[this.avatarNum]}.jpg`)
-        } 
+        },
+        mySocket(){
+            return this.$store.socket
+        }
     },
     methods: {
         login(){
@@ -45,14 +55,45 @@ export default {
                 }, 2000);
                 return
             }
-            this.$router.push({
-                path: '/chat',
-                name: 'Chat',
-                params: {
-                    name: this.name,
-                    avatar: this.avatar[this.avatarNum]
+            this.mySocket.emit('login', {
+                name: this.name,
+                avatar: this.avatar[this.avatarNum]
+            })
+            
+            this.mySocket.on('loginStatus', (state) => {
+                if(state){
+                    this.$router.push({
+                        path: '/chat',
+                        name: 'Chat',
+                        params: {
+                            name: this.name,
+                            avatar: this.avatar[this.avatarNum]
+                        }
+                    })
+                }else{
+                    this.errDisplay = true
+                    // this.$Message.config({
+                    //     top: 20,
+                    //     duration: 3,
+                    //     content: 'ERROR'
+                    // })
+                    // this.$Modal.confirm({
+                    //     title: 'Title',
+                    //     content: '<p>用户名已存在，请重新输入！</p>',
+                    //     width: '30px',
+                    //     onOk: ()=>{},
+                    //     maskclosable: false
+                    // });
                 }
             })
+            // this.$router.push({
+            //     path: '/chat',
+            //     name: 'Chat',
+            //     params: {
+            //         name: this.name,
+            //         avatar: this.avatar[this.avatarNum]
+            //     }
+            // })
         },
         left(){
             if(!this.avatarNum){
@@ -70,6 +111,9 @@ export default {
             }
             console.log(this.avatarNum)
         }
+    },
+    mounted(){
+        this.$store.socket = io('http://localhost:9999')
     }
 }
 </script>
