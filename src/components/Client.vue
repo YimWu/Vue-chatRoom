@@ -1,6 +1,6 @@
 <template>
     <div class="div">
-        <Layout class="wripper">
+        <Layout class="client-wripper">
             <Sider class="sider1" style="min-width: 50px; max-width: 50px">
                 <Avatar shape="square" :src="avatar('self')" />
                 <Icon class="menu" type="ios-menu" />
@@ -23,17 +23,14 @@
                                 <Row class="row">
                                     <!-- iView标签闭合问题，已对eslint设置忽略 -->
                                     <Col class="avatar" span="7">
-                                        <Avatar style="width: 40px;height: 40px" shape="square" :src="avatar(item.avatar)"/>
-                    
+                                        <Avatar style="width: 40px;height: 40px" shape="square" :src="avatar(item.name===self ? 'file' : item.avatar)"/>
                                     </Col>
                                     <Col class="infomation" span="12">
-                                        <div class="name">{{item.name}}</div>
-                                        <div>111</div>
-                    
+                                        <div class="name">{{item.name===self ? '文件传输助手' : item.name}}</div>
+                                        <div class="msg">{{msgs[item.name] ? msgs[item.name][msgs[item.name].length-1].msg : ''}}</div>
                                     </Col>
                                     <Col class="time" span="">
-                                        <span>17:53</span>
-                    
+                                        <span>{{msgs[item.name] ? msgs[item.name][msgs[item.name].length-1].time : ''}}</span>
                                     </Col>
                                 </Row>
                             </MenuItem>
@@ -63,7 +60,7 @@
                 <Footer class="footer">
                     <Icon class="emotion" type="ios-happy-outline" />
                     <textarea @keydown.enter.prevent="send" v-model="sendMsg" class="textarea" cols="52" rows="3"></textarea>
-                    <div class="tip" v-if="visible">
+                    <div class="tip" v-show="visible">
                         <div class="tip-inner">不能发送空白信息</div>
                         <div class="tip-inner2"></div>
                     </div>
@@ -76,38 +73,46 @@
 
 <script>
 import io from 'socket.io-client'
+//返回格式化后的实时时间
+function getDate(){
+    var obj = new Date()
+    return (obj.getHours()+'').padStart(2, '0')+':'+ (obj.getMinutes()+'').padStart(2, '0')
+}
 export default {
     name: 'Client',
     props: {
-        // msg: String
+        
     },
     data() {
         return {
-            // menu: ['1', '2', '3', '4', '5', '6', '7', '8'],
-            menu: ['1', '2', '3'],
             currentName: '聊天室',
-            self: '吴曼燚',
-            myAvatar: 'Curry',
-            person: [
-                {
+            self: '',
+            myAvatar: 'avatar1',
+            person: {
+                '聊天室': {
                     avatar: 'qunliao',
                     name: '聊天室'
                 },
-            ],
+            },
             msgs: {},
             sendMsg: '',
             socket: '',
-            visible: false
+            visible: false,
         }
     },
     computed: {
-        // msg(){
-        //     return this.msgs[this.currentName]
-        // }
+        mySocket(){
+            return this.$store.socket
+        }
     },
     methods: {
         selectName(name){
-            this.name = name
+            this.currentName = name
+            //取Content组件中的元素div,用于更新聊天内容时控制滚动条至底部
+            let div = this.$refs.content.$el
+            this.$nextTick(() => {
+                div.scrollTop = div.scrollHeight
+            })
         },
         avatar(avt){
             if(avt === 'self'){
@@ -117,6 +122,8 @@ export default {
             }
         },
         send(){
+            var currentTime = getDate()
+            console.log(currentTime)
             if(!this.sendMsg){
                 this.visible = true
                 setTimeout(() => {
@@ -128,17 +135,46 @@ export default {
                 sender: this.self,
                 receiver: this.currentName,
                 msg: this.sendMsg,
-                avatar: this.myAvatar
+                avatar: this.myAvatar,
+                group: false,
+                time: currentTime
             }
-            this.socket.emit('chatMessage', msg)
-            this.sendMsg = ''
+            if(this.currentName !== '聊天室'){
+                console.log('不是聊天室')
+                //取Content组件中的元素div,用于更新聊天内容时控制滚动条至底部
+                let div = this.$refs.content.$el
+                if(!this.msgs[this.currentName]){
+                    this.$set(this.msgs, this.currentName, [])
+                }
+                this.msgs[this.currentName].push(msg)
+                this.$nextTick(() => {
+                    div.scrollTop = div.scrollHeight
+                })
+                if(this.currentName !== this.self){
+                    this.mySocket.emit('chatMessage', msg)
+                }
+                this.sendMsg = ''
+            }else{
+                msg.group = true
+                console.log('shiliaotianshi')
+                this.mySocket.emit('chatMessage', msg)
+                this.sendMsg = ''
+            }
+            
         },
         exit(){
             this.$router.push({path: '/login'})
             this.$router.go(0)
         }
     },
-
+    beforeCreate(){
+        if(!this.$route.params.name){
+            this.$router.push({
+                path: '/login',
+                name: 'Login',
+            })
+        }
+    },
     mounted() {
         this.self = this.$route.params.name
         this.myAvatar = this.$route.params.avatar
@@ -148,42 +184,32 @@ export default {
         this.$nextTick(() => {
             div.scrollTop = div.scrollHeight
         })
-        //连接服务器
-        this.socket = io('http://localhost:9999')
-        console.log(this.self)
-        //向服务器发送上线消息
-        this.socket.emit('come', {
-            name: this.self,
-            avatar: this.myAvatar
-        })
-
         //接收消息
-        this.socket.on('msg', (msg) => {
-            // this.msgs.({
-            //     sender: this.self,
-            //     msg: msg
-            // })
+        this.mySocket.on('msg', (msg) => {
+            var msgName = '' 
             console.log(msg)
-            if(!this.msgs[msg.receiver]){
-                // this.msgs[msg.receiver]=[]
-                this.$set(this.msgs, msg.receiver, [])
+            if(msg.group){
+                msgName = msg.receiver
+            }else{
+                msgName = msg.sender
             }
-            this.msgs[msg.receiver].push(msg)
-            console.log(this.msgs[msg.receiver])
-            // this.msg = this.msgs[this.currentName]
+            if(!this.msgs[msgName]){
+                this.$set(this.msgs, msgName, [])
+            }
+            this.msgs[msgName].push(msg)
             //消息更新时将滚动条置于最底部
             this.$nextTick(() => {
                 div.scrollTop = div.scrollHeight
             })
-            // setTimeout(() => {
-            // }, 0);
         })
 
         //接收上线人员
-        this.socket.on('online', (ol) => {
-            console.log('ol',ol)
-            this.person = ol
+        this.mySocket.on('userlist', (list) => {
+            console.log('list',list)
+            this.person = list
         })
+
+        this.mySocket.emit('getUserlist')
     }
 }
 </script>
@@ -198,11 +224,9 @@ export default {
         background-color #aaa
         border-radius 50px
     .div
-        position fixed
-        left 320px
-        top -20px
-        .wripper
-            margin 50px auto
+        width 98%
+        .client-wripper
+            margin 0px auto
             width 650px
             height 450px
             box-shadow 0 0 10px #999
@@ -257,7 +281,12 @@ export default {
                                         font-size 10px
                                         .name
                                             width 100%
-                                            font-size 14px
+                                            font-size 12px
+                                            overflow hidden
+                                            white-space nowrap
+                                            text-overflow ellipsis
+                                        .msg 
+                                            width 100%
                                             overflow hidden
                                             white-space nowrap
                                             text-overflow ellipsis
@@ -335,7 +364,7 @@ export default {
                         color #aaa
                         margin-left -2px
                         &:hover
-                            color #111
+                            color #9eea6a
                     .textarea
                         display block
                         border none
