@@ -1,6 +1,6 @@
 <template>
     <div class="div">
-        <Layout class="wripper">
+        <Layout class="client-wripper">
             <Sider class="sider1" style="min-width: 50px; max-width: 50px">
                 <Avatar shape="square" :src="avatar('self')" />
                 <Icon class="menu" type="ios-menu" />
@@ -73,7 +73,7 @@
 
 <script>
 import io from 'socket.io-client'
-
+//返回格式化后的实时时间
 function getDate(){
     var obj = new Date()
     return (obj.getHours()+'').padStart(2, '0')+':'+ (obj.getMinutes()+'').padStart(2, '0')
@@ -81,12 +81,10 @@ function getDate(){
 export default {
     name: 'Client',
     props: {
-        // msg: String
+        
     },
     data() {
         return {
-            // menu: ['1', '2', '3', '4', '5', '6', '7', '8'],
-            menu: ['1', '2', '3'],
             currentName: '聊天室',
             self: '',
             myAvatar: 'avatar1',
@@ -146,7 +144,6 @@ export default {
                 //取Content组件中的元素div,用于更新聊天内容时控制滚动条至底部
                 let div = this.$refs.content.$el
                 if(!this.msgs[this.currentName]){
-                    // this.msgs[msg.receiver]=[]
                     this.$set(this.msgs, this.currentName, [])
                 }
                 this.msgs[this.currentName].push(msg)
@@ -197,18 +194,13 @@ export default {
                 msgName = msg.sender
             }
             if(!this.msgs[msgName]){
-                // this.msgs[msg.receiver]=[]
                 this.$set(this.msgs, msgName, [])
             }
             this.msgs[msgName].push(msg)
-            console.log(this.msgs[msgName])
-            // this.msg = this.msgs[this.currentName]
             //消息更新时将滚动条置于最底部
             this.$nextTick(() => {
                 div.scrollTop = div.scrollHeight
             })
-            // setTimeout(() => {
-            // }, 0);
         })
 
         //接收上线人员
@@ -232,11 +224,9 @@ export default {
         background-color #aaa
         border-radius 50px
     .div
-        position fixed
-        left 320px
-        top -20px
-        .wripper
-            margin 50px auto
+        width 98%
+        .client-wripper
+            margin 0px auto
             width 650px
             height 450px
             box-shadow 0 0 10px #999
@@ -374,7 +364,7 @@ export default {
                         color #aaa
                         margin-left -2px
                         &:hover
-                            color #111
+                            color #9eea6a
                     .textarea
                         display block
                         border none

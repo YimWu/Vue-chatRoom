@@ -1,6 +1,6 @@
 <template>
-    <div class="login">
-        <div class="wripper">
+    <div class="div">
+        <div class="login-wripper">
             <div class="title">ChatRoom V1.0</div>
             <div class="inner">
                 <Icon @click="left" class="left" type="md-arrow-round-back" />
@@ -72,28 +72,8 @@ export default {
                     })
                 }else{
                     this.errDisplay = true
-                    // this.$Message.config({
-                    //     top: 20,
-                    //     duration: 3,
-                    //     content: 'ERROR'
-                    // })
-                    // this.$Modal.confirm({
-                    //     title: 'Title',
-                    //     content: '<p>用户名已存在，请重新输入！</p>',
-                    //     width: '30px',
-                    //     onOk: ()=>{},
-                    //     maskclosable: false
-                    // });
                 }
             })
-            // this.$router.push({
-            //     path: '/chat',
-            //     name: 'Chat',
-            //     params: {
-            //         name: this.name,
-            //         avatar: this.avatar[this.avatarNum]
-            //     }
-            // })
         },
         left(){
             if(!this.avatarNum){
@@ -101,7 +81,6 @@ export default {
             }else{
                 this.avatarNum = this.avatarNum - 1
             }
-            console.log(this.avatarNum)
         },
         right(){
             if(this.avatarNum === 14){
@@ -109,78 +88,79 @@ export default {
             }else{
                 this.avatarNum = this.avatarNum + 1
             }
-            console.log(this.avatarNum)
         }
     },
     mounted(){
-        this.$store.socket = io('http://localhost:9999')
+        // this.$store.socket = io('http://192.168.2.102:9999/')
+        this.$store.socket = io('/')
     }
 }
 </script>
 
 <style lang="stylus">
-    .wripper
-        // 解决点击left/right切换图片时点击太频繁而图片出现选择状态
-        // 背景变为蓝色
-        -webkit-user-select:none; 
-        -moz-user-select:none; 
-        -ms-user-select:none; 
-        user-select:none;
-        width 350px
-        height 500px
-        background #f5f5f5
-        border-radius 4px
-        box-shadow 0 0 10px #999
-        position absolute
-        top 50%
-        left 50%
-        margin -250px 0 0 -175px
-        .title
-            font-size 20px
-            color #666
-            text-align left
-            padding 18px
-        .inner
-            padding 50px
-            .left
-                display inline-block
-                font-size 28px
-                margin-right 35px
-            .avatar
-                display inline-block
-                width 110px
-                height 110px
-            .right 
-                display inline-block
-                font-size 28px
-                margin-left 35px
-            .input
-                margin-top 60px
-            .tip
-                position absolute
-                top 235px
-                right 50px
-                font-size 12px
-                width 150px
-                height 30px
-                .tip-inner
-                    display block
-                    background #ddd
-                    border-radius 3px
-                    padding 10px 15px
-                .tip-inner2
-                    display block
-                    width 0px
-                    height 0px
-                    border-top 10px solid #ddd
-                    border-bottom 10px solid transparent
-                    border-right 10px solid transparent
-                    border-left 10px solid transparent
-                    margin-left 90px
-                    border-radius 2px
-            .button
-                font-size 16px
-                height 40px
-                width 100%
-                margin-top 20px
+    .div
+        .login-wripper
+            // 解决点击left/right切换图片时点击太频繁而图片出现选择状态
+            // 背景变为蓝色
+            -webkit-user-select:none; 
+            -moz-user-select:none; 
+            -ms-user-select:none; 
+            user-select:none;
+            width 350px
+            height 500px
+            background #f5f5f5
+            border-radius 4px
+            box-shadow 0 0 10px #999
+            position absolute
+            top 50%
+            left 50%
+            margin -250px 0 0 -175px
+            .title
+                font-size 20px
+                color #666
+                text-align left
+                padding 18px
+            .inner
+                padding 50px
+                .left
+                    display inline-block
+                    font-size 28px
+                    margin-right 35px
+                .avatar
+                    display inline-block
+                    width 110px
+                    height 110px
+                .right 
+                    display inline-block
+                    font-size 28px
+                    margin-left 35px
+                .input
+                    margin-top 60px
+                .tip
+                    position absolute
+                    top 235px
+                    right 50px
+                    font-size 12px
+                    width 150px
+                    height 30px
+                    .tip-inner
+                        display block
+                        background #ddd
+                        border-radius 3px
+                        padding 10px 15px
+                    .tip-inner2
+                        display block
+                        width 0px
+                        height 0px
+                        border-top 10px solid #ddd
+                        border-bottom 10px solid transparent
+                        border-right 10px solid transparent
+                        border-left 10px solid transparent
+                        margin-left 90px
+                        border-radius 2px
+                .button
+                    font-size 16px
+                    height 40px
+                    width 100%
+                    margin-top 20px
 </style>
