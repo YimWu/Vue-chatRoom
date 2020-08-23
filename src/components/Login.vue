@@ -91,8 +91,8 @@ export default {
         }
     },
     mounted(){
-        // this.$store.socket = io('http://192.168.2.102:9999/')
-        this.$store.socket = io('/')
+        this.$store.socket = io('http://192.168.2.102:9999/')
+        // this.$store.socket = io('/')
     }
 }
 </script>

@@ -1,6 +1,6 @@
 <template>
-    <div class="div">
-        <Layout class="client-wripper">
+    <div class="div" @click="emtControl">
+        <Layout  class="client-wripper">
             <Sider class="sider1" style="min-width: 50px; max-width: 50px">
                 <Avatar shape="square" :src="avatar('self')" />
                 <Icon class="menu" type="ios-menu" />
@@ -17,7 +17,7 @@
                         <Menu class="menu" 
                             :active-name="currentName"
                             theme="dark" 
-                            width="176px"
+                            width="180px"
                             @on-select="selectName">
                             <MenuItem class="menu-item" v-for="(item, index) in person" :key="index" :name="item.name">
                                 <Row class="row">
@@ -59,7 +59,8 @@
                 </Content>
                 <Footer class="footer">
                     <Icon class="emotion" type="ios-happy-outline" />
-                    <textarea @keydown.enter.prevent="send" v-model="sendMsg" class="textarea" cols="52" rows="3"></textarea>
+                    <div v-show="emotionShow" class="emotion-list" ref="emotionList"></div>
+                    <textarea ref="textarea" @keydown.enter.prevent="send" v-model="sendMsg" class="textarea" cols="52" rows="3"></textarea>
                     <div class="tip" v-show="visible">
                         <div class="tip-inner">不能发送空白信息</div>
                         <div class="tip-inner2"></div>
@@ -98,6 +99,7 @@ export default {
             sendMsg: '',
             socket: '',
             visible: false,
+            emotionShow: false
         }
     },
     computed: {
@@ -165,6 +167,21 @@ export default {
         exit(){
             this.$router.push({path: '/login'})
             this.$router.go(0)
+        },
+        //表情框打开、关闭与选择
+        emtControl(event){
+            // console.log('eeee', event.target)
+            if(event.target.className.indexOf('emotion')!==-1){
+                this.emotionShow = true
+            }else{
+                if(event.target.className.indexOf('face')!==-1){
+                    //将点击的表情对应的title输出到textarea中
+                    this.sendMsg += `【${event.target.getAttribute('title')}】`
+                    // 使textarea自动获得焦点
+                    this.$refs.textarea.focus()
+                }
+                this.emotionShow = false
+            }
         }
     },
     beforeCreate(){
@@ -210,11 +227,21 @@ export default {
         })
 
         this.mySocket.emit('getUserlist')
+
+        //生成表情列表
+        var emtList = this.$refs.emotionList
+        var ul = document.createElement('ul')
+        for(var i=0; i<100; i++){
+            ul.innerHTML += `<li class="face face${i}" title="emotion${i}"></li>`
+        }
+        emtList.appendChild(ul)
+        console.log(ul)
     }
 }
 </script>
 
 <style lang="stylus">
+@import "../assets/stylus/index.styl";
     ::-webkit-scrollbar
         width 4px
         background-color #eeeae8
@@ -300,6 +327,7 @@ export default {
                                     vertical-align top
             .content-wrapper
                 width 500px
+                overflow visible !important
                 .header
                     height 50px
                     background rgb(245, 245, 245)
@@ -365,6 +393,35 @@ export default {
                         margin-left -2px
                         &:hover
                             color #9eea6a
+                            font-weight 600
+                    .emotion-list
+                        position absolute
+                        left -76px
+                        top -160px
+                        background #fff
+                        width 400px
+                        // height 100px
+                        z-index 901
+                        box-shadow 0 0 3px #ccc
+                        ul
+                            padding 5px
+                            .face
+                                list-style none
+                                // background #ccc
+                                float left
+                                width 26px
+                                height 26px
+                                padding 2px
+                                &:hover
+                                    background rgba(0, 0, 0, .1)
+                                &:after
+                                    content ""
+                                    padding  2px 10px
+                                    // width 26px
+                                    // height 26px
+                                    background url('../assets/images/face.png') no-repeat
+                            // 为每个不同的表情添加不同的图片
+                            myEmotion()
                     .textarea
                         display block
                         border none

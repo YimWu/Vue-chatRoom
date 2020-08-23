@@ -1,0 +1,9 @@
+$col = 0
+$row = 0
+myEmotion()
+    for num in (0..99)
+        .face{num}
+            &:after
+                $col = $col + floor(num / 15)
+                $row = num % 15
+                background-position: -6px-($row*26) -6px-(26*$col)
